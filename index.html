@@ -8,57 +8,55 @@
   </head>
   <body>
     <div class="container">
+      
       <div id="login-section" class="card">
         <h2>Hệ thống Nội bộ</h2>
         <p>Sử dụng tài khoản cá nhân để bảo mật</p>
         <p>
-          (Đăng kí tài khoản mới bằng cách nhập email và mật khẩu rồi nhấn đăng
-          kí mới!)
+          (Đăng kí tài khoản mới bằng cách nhập email và mật khẩu rồi nhấn đăng kí mới!)
         </p>
-        <input
-          type="email"
-          id="email"
-          placeholder="Email (VD: abc@gmail.com)"
-        />
-        <input
-          type="password"
-          id="password"
-          placeholder="Mật khẩu (Ít nhất 6 ký tự)"
-        />
+        <input type="email" id="email" placeholder="Email (VD: abc@gmail.com)" />
+        <input type="password" id="password" placeholder="Mật khẩu (Ít nhất 6 ký tự)" />
 
-        <button id="btnLogin" style="background-color: #007bff">
-          Đăng nhập
-        </button>
-        <button
-          id="btnRegister"
-          style="background-color: #17a2b8; margin-top: 10px"
-        >
+        <button id="btnLogin" style="background-color: #007bff">Đăng nhập</button>
+        <button id="btnRegister" style="background-color: #17a2b8; margin-top: 10px">
           Đăng ký tài khoản mới
         </button>
 
-        <p
-          id="login-error"
-          style="color: red; display: none; margin-top: 10px"
-        ></p>
+        <p id="login-error" style="color: red; display: none; margin-top: 10px"></p>
+      </div>
+
+      <div id="room-selection" class="card" style="display: none;">
+        <h2 style="color: #007bff; text-align: center;">🏠 Sảnh Quản Lý</h2>
+        <p style="text-align: center;">Xin chào, <strong id="userNameDisplay" style="color: #d9534f;"></strong>!</p>
+        
+        <div style="margin-top: 20px; padding: 15px; border: 2px dashed #28a745; border-radius: 8px; text-align: center;">
+          <h4 style="margin-top: 0; color: #28a745;">Tạo phòng mới (Làm Trưởng phòng)</h4>
+          <button id="btnCreateRoom" style="width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Tạo Phòng Ngay</button>
+        </div>
+
+        <div style="margin-top: 20px; padding: 15px; border: 2px dashed #17a2b8; border-radius: 8px; text-align: center;">
+          <h4 style="margin-top: 0; color: #17a2b8;">Tham gia phòng đã có</h4>
+          <input type="text" id="joinRoomCode" placeholder="Nhập mã phòng (VD: AB123)" style="width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; text-transform: uppercase;">
+          <button id="btnJoinRoom" style="width: 100%; padding: 10px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Vào Phòng</button>
+        </div>
       </div>
 
       <div id="app-section" class="card" style="display: none">
         <h2>Sổ Đi Chợ - SmartShare</h2>
+        
         <div class="header-info">
           <span class="offline-badge" id="network-status">Đang kết nối...</span>
           <button id="btnLogout" class="btn-logout">Đăng xuất</button>
         </div>
 
-        <p style="text-align: center; color: #555">
+        <p style="text-align: center; color: #555; margin-bottom: 5px;">
           Xin chào, <b id="currentUserDisplay"></b>!
         </p>
+        <h4 style="text-align: center; margin-top: 0;">Mã phòng: <span id="currentRoomDisplay" style="color: red; font-size: 1.2em; border: 1px dashed red; padding: 2px 5px;"></span></h4>
 
         <div class="input-area">
-          <input
-            type="text"
-            id="itemName"
-            placeholder="Tên món đồ (VD: Rau, Thịt...)"
-          />
+          <input type="text" id="itemName" placeholder="Tên món đồ (VD: Rau, Thịt...)" />
           <input type="number" id="itemPrice" placeholder="Số tiền (VNĐ)" />
           <button id="btnAddExpense" class="btn-add">Thêm khoản chi</button>
         </div>
@@ -71,16 +69,13 @@
             <button id="btnSettle" class="btn-settle">Chốt sổ tháng này</button>
           </div>
 
-          <div
-            id="settlementResult"
-            class="settlement-box"
-            style="display: none"
-          >
+          <div id="settlementResult" class="settlement-box" style="display: none">
             <h3>📊 Kết quả chia tiền</h3>
             <ul id="settlementList"></ul>
           </div>
         </div>
       </div>
+
     </div>
 
     <script type="module" src="app.js?version=2"></script>

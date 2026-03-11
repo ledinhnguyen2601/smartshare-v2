@@ -9,7 +9,10 @@ import {
   enableIndexedDbPersistence,
   query,
   orderBy,
-  updateDoc, // <-- Đã thêm updateDoc
+  updateDoc,
+  setDoc,
+  getDoc,
+  arrayUnion,
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import {
   getAuth,
@@ -19,7 +22,7 @@ import {
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// 🛑 BẠN DÁN CỤC firebaseConfig CỦA DỰ ÁN QLDS VÀO ĐÂY NHÉ:
+// 🛑 DÁN CẤU HÌNH FIREBASE V2 CỦA BẠN VÀO ĐÂY:
 const firebaseConfig = {
   apiKey: "AIzaSyB_PZQJndlgeZMlWVc-HnWPdy9IUT_HKv4",
   authDomain: "snartshare-qlds-v2.firebaseapp.com",
@@ -29,8 +32,6 @@ const firebaseConfig = {
   appId: "1:915299127922:web:1e3ae81f9e1392418868eb",
   measurementId: "G-S4LQBX8E3C",
 };
-// 👑 CÀI ĐẶT ADMIN (Điền email trưởng phòng vào đây)
-const ADMIN_EMAIL = "nguyen0877780858@gmail.com";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -40,38 +41,40 @@ enableIndexedDbPersistence(db).catch((err) => {
   console.log("Lỗi offline: ", err.code);
 });
 
-const expensesCollection = collection(db, "expenses");
-let currentMonthExpenses = [];
+// Các biến toàn cục cho V2
 let activeUserEmail = "";
 let activeUserName = "";
-let isAdmin = false; // Biến kiểm tra quyền
+let currentRoomCode = ""; // Mã phòng đang vào
+let isAdmin = false; // Quyền Admin theo phòng
+let currentMonthExpenses = [];
+let unsubscribeSnapshot = null; // Biến để ngắt kết nối dữ liệu phòng cũ khi đổi phòng
 
-// --- 1. LẮNG NGHE ĐĂNG NHẬP & PHÂN QUYỀN ---
+// Hàm tạo mã phòng ngẫu nhiên (6 ký tự)
+function generateRoomCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// --- 1. LẮNG NGHE TRẠNG THÁI ĐĂNG NHẬP ---
 onAuthStateChanged(auth, (user) => {
   if (user) {
     activeUserEmail = user.email;
     activeUserName = user.email.split("@")[0];
-    isAdmin = activeUserEmail === ADMIN_EMAIL; // Trưởng phòng mới là true
 
-    // Hiển thị tên và (Chức vụ)
-    document.getElementById("currentUserDisplay").innerText =
-      activeUserName + (isAdmin ? " (Trưởng phòng)" : " (Thành viên)");
-
-    // Chỉ Admin mới thấy nút Chốt sổ
-    document.getElementById("btnSettle").style.display = isAdmin
-      ? "inline-block"
-      : "none";
-
+    document.getElementById("userNameDisplay").innerText = activeUserName;
+    // Ẩn login, hiện sảnh chọn phòng
     document.getElementById("login-section").style.display = "none";
-    document.getElementById("app-section").style.display = "block";
-    loadDataRealtime();
+    document.getElementById("app-section").style.display = "none";
+    document.getElementById("room-selection").style.display = "block";
   } else {
     document.getElementById("login-section").style.display = "block";
+    document.getElementById("room-selection").style.display = "none";
     document.getElementById("app-section").style.display = "none";
+    currentRoomCode = "";
+    isAdmin = false;
   }
 });
 
-// --- 2. ĐĂNG KÝ (Giữ nguyên) ---
+// Đăng ký, Đăng nhập, Đăng xuất (Giữ nguyên luồng cũ)
 document.getElementById("btnRegister").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -84,7 +87,6 @@ document.getElementById("btnRegister").addEventListener("click", async () => {
   }
 });
 
-// --- 3. ĐĂNG NHẬP (Giữ nguyên) ---
 document.getElementById("btnLogin").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -92,8 +94,7 @@ document.getElementById("btnLogin").addEventListener("click", async () => {
     await signInWithEmailAndPassword(auth, email, password);
     document.getElementById("login-error").style.display = "none";
   } catch (error) {
-    document.getElementById("login-error").innerText =
-      "Sai email hoặc mật khẩu!";
+    document.getElementById("login-error").innerText = "Sai thông tin!";
     document.getElementById("login-error").style.display = "block";
   }
 });
@@ -102,7 +103,75 @@ document.getElementById("btnLogout").addEventListener("click", () => {
   signOut(auth);
 });
 
-// --- 4. THÊM KHOẢN CHI ---
+// --- 2. XỬ LÝ SẢNH CHỜ (TẠO PHÒNG & VÀO PHÒNG) ---
+
+// TẠO PHÒNG MỚI (Trở thành Admin)
+document.getElementById("btnCreateRoom").addEventListener("click", async () => {
+  const newCode = generateRoomCode();
+  try {
+    // Tạo một bảng ghi trong collection 'rooms'
+    await setDoc(doc(db, "rooms", newCode), {
+      adminEmail: activeUserEmail,
+      members: [activeUserEmail],
+      createdAt: new Date(),
+    });
+    alert(
+      `Tạo phòng thành công! Mã phòng của bạn là: ${newCode}\nHãy gửi mã này cho thành viên khác để tham gia.`,
+    );
+    enterRoom(newCode, true); // True vì người tạo là Admin
+  } catch (e) {
+    alert("Lỗi tạo phòng: " + e.message);
+  }
+});
+
+// THAM GIA PHÒNG (Thành viên)
+document.getElementById("btnJoinRoom").addEventListener("click", async () => {
+  const codeInput = document
+    .getElementById("joinRoomCode")
+    .value.trim()
+    .toUpperCase();
+  if (!codeInput) return alert("Vui lòng nhập mã phòng!");
+
+  try {
+    const roomRef = doc(db, "rooms", codeInput);
+    const roomSnap = await getDoc(roomRef);
+
+    if (roomSnap.exists()) {
+      // Thêm user vào danh sách members của phòng đó
+      await updateDoc(roomRef, { members: arrayUnion(activeUserEmail) });
+
+      const roomData = roomSnap.data();
+      const checkAdmin = roomData.adminEmail === activeUserEmail;
+      alert("Vào phòng thành công!");
+      enterRoom(codeInput, checkAdmin);
+    } else {
+      alert("Mã phòng không tồn tại!");
+    }
+  } catch (e) {
+    alert("Lỗi khi tham gia phòng: " + e.message);
+  }
+});
+
+// Hàm khởi tạo sau khi vào phòng thành công
+function enterRoom(code, adminStatus) {
+  currentRoomCode = code;
+  isAdmin = adminStatus;
+
+  document.getElementById("room-selection").style.display = "none";
+  document.getElementById("app-section").style.display = "block";
+  document.getElementById("currentRoomDisplay").innerText = code;
+
+  document.getElementById("currentUserDisplay").innerText =
+    activeUserName + (isAdmin ? " (Trưởng phòng)" : " (Thành viên)");
+  document.getElementById("btnSettle").style.display = isAdmin
+    ? "inline-block"
+    : "none";
+
+  loadDataRealtime(); // Tải dữ liệu riêng của phòng này
+}
+
+// --- 3. CÁC HÀM CŨ ĐƯỢC CẬP NHẬT TRUY VẤN THEO PHÒNG ---
+
 document.getElementById("btnAddExpense").addEventListener("click", async () => {
   const name = document.getElementById("itemName").value;
   const price = document.getElementById("itemPrice").value;
@@ -110,14 +179,21 @@ document.getElementById("btnAddExpense").addEventListener("click", async () => {
 
   document.getElementById("btnAddExpense").innerText = "Đang lưu...";
   try {
-    await addDoc(expensesCollection, {
+    // ⚠️ QUAN TRỌNG: Lưu vào subcollection 'expenses' CỦA phòng hiện tại
+    const roomExpensesRef = collection(
+      db,
+      "rooms",
+      currentRoomCode,
+      "expenses",
+    );
+    await addDoc(roomExpensesRef, {
       name: name,
       price: parseInt(price),
       payerEmail: activeUserEmail,
       payer: activeUserName,
       timestamp: new Date(),
       dateString: new Date().toLocaleDateString("vi-VN"),
-      pendingDelete: false, // Thuộc tính cờ hiệu duyệt xóa
+      pendingDelete: false,
     });
     document.getElementById("itemName").value = "";
     document.getElementById("itemPrice").value = "";
@@ -127,16 +203,19 @@ document.getElementById("btnAddExpense").addEventListener("click", async () => {
   document.getElementById("btnAddExpense").innerText = "Thêm khoản chi";
 });
 
-// --- 5. HIỂN THỊ DỮ LIỆU & LUỒNG DUYỆT XÓA ---
 function loadDataRealtime() {
-  const q = query(expensesCollection, orderBy("timestamp", "desc"));
-  onSnapshot(q, (snapshot) => {
+  if (unsubscribeSnapshot) unsubscribeSnapshot(); // Xóa luồng dữ liệu cũ nếu có
+
+  // ⚠️ QUAN TRỌNG: Chỉ lấy dữ liệu từ subcollection 'expenses' CỦA phòng hiện tại
+  const roomExpensesRef = collection(db, "rooms", currentRoomCode, "expenses");
+  const q = query(roomExpensesRef, orderBy("timestamp", "desc"));
+
+  unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
     const listElement = document.getElementById("expenseList");
     listElement.innerHTML = "";
     let total = 0;
     currentMonthExpenses = [];
 
-    // TÍNH NĂNG ĐỔI MÀU TRẠNG THÁI MẠNG (ĐÃ THÊM VÀO ĐÂY) 🌟
     const isOffline = snapshot.metadata.fromCache;
     document.getElementById("network-status").innerText = isOffline
       ? "Đang Offline (Lưu tạm)"
@@ -147,83 +226,77 @@ function loadDataRealtime() {
 
     snapshot.forEach((docSnap) => {
       const item = docSnap.data();
-      // Bỏ qua các khoản đang chờ xóa để không tính vào tổng tiền
       if (!item.pendingDelete) {
         currentMonthExpenses.push(item);
         total += item.price;
       }
 
       const li = document.createElement("li");
-
-      // Xây dựng giao diện nút Xóa tùy theo Quyền và Trạng thái
       let actionButtons = "";
       if (item.pendingDelete) {
         if (isAdmin) {
           actionButtons = `<button class="btn-approve" data-id="${docSnap.id}" style="background: #dc3545;">Duyệt Xóa</button>
                              <button class="btn-reject" data-id="${docSnap.id}" style="background: #6c757d;">Từ chối</button>`;
         } else {
-          actionButtons = `<span style="color: #ff9800; font-size: 13px; font-weight: bold;">⏳ Đang chờ Trưởng phòng duyệt xóa</span>`;
+          actionButtons = `<span style="color: #ff9800; font-size: 13px; font-weight: bold;">⏳ Đang chờ duyệt</span>`;
         }
       } else {
-        // Cho phép người mua hoặc Admin được bấm Xóa
         if (isAdmin || item.payerEmail === activeUserEmail) {
           actionButtons = `<button class="btn-request-delete" data-id="${docSnap.id}">Xóa</button>`;
         }
       }
 
-      li.innerHTML = `
-        <div style="${item.pendingDelete ? "opacity: 0.5;" : ""}">
-            <strong>${item.name}</strong> - ${item.price.toLocaleString("vi-VN")} VNĐ <br>
-            <small>Người mua: ${item.payer} (${item.dateString})</small>
-        </div>
-        <div>${actionButtons}</div>
-      `;
+      li.innerHTML = `<div style="${item.pendingDelete ? "opacity: 0.5;" : ""}"><strong>${item.name}</strong> - ${item.price.toLocaleString("vi-VN")} VNĐ <br><small>Người mua: ${item.payer} (${item.dateString})</small></div><div>${actionButtons}</div>`;
       listElement.appendChild(li);
     });
-
     document.getElementById("totalAmount").innerText =
       total.toLocaleString("vi-VN");
 
-    // Gắn sự kiện cho các nút Xóa
+    // Xử lý sự kiện Xóa và Duyệt (Nhớ đổi đường dẫn doc)
     document.querySelectorAll(".btn-request-delete").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         const docId = e.target.getAttribute("data-id");
+        const expenseDoc = doc(db, "rooms", currentRoomCode, "expenses", docId);
         if (isAdmin) {
-          // Admin xóa phát bay luôn
-          if (confirm("Xóa mục này?"))
-            await deleteDoc(doc(db, "expenses", docId));
+          if (confirm("Xóa mục này?")) await deleteDoc(expenseDoc);
         } else {
-          // User xóa thì đẩy vào trạng thái Chờ
-          if (
-            confirm(
-              "Gửi yêu cầu xóa cho Trưởng phòng? Món này sẽ tạm thời bị trừ khỏi tổng tiền.",
-            )
-          ) {
-            await updateDoc(doc(db, "expenses", docId), {
-              pendingDelete: true,
-            });
-          }
+          if (confirm("Gửi yêu cầu xóa cho Trưởng phòng?"))
+            await updateDoc(expenseDoc, { pendingDelete: true });
         }
       });
     });
 
-    // Gắn sự kiện Duyệt/Từ chối cho Admin
     document.querySelectorAll(".btn-approve").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
-        await deleteDoc(doc(db, "expenses", e.target.getAttribute("data-id")));
+        await deleteDoc(
+          doc(
+            db,
+            "rooms",
+            currentRoomCode,
+            "expenses",
+            e.target.getAttribute("data-id"),
+          ),
+        );
       });
     });
     document.querySelectorAll(".btn-reject").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
-        await updateDoc(doc(db, "expenses", e.target.getAttribute("data-id")), {
-          pendingDelete: false,
-        });
+        await updateDoc(
+          doc(
+            db,
+            "rooms",
+            currentRoomCode,
+            "expenses",
+            e.target.getAttribute("data-id"),
+          ),
+          { pendingDelete: false },
+        );
       });
     });
   });
 }
 
-// --- 6. CHỐT SỔ (Chỉ Admin bấm được) ---
+// Nút chốt sổ giữ nguyên như bản V1
 document.getElementById("btnSettle").addEventListener("click", () => {
   const numPeople = parseInt(
     prompt("Nhập tổng số người trong phòng trọ (Ví dụ: 3):", "3"),
@@ -242,7 +315,6 @@ document.getElementById("btnSettle").addEventListener("click", () => {
   if (totalSpent === 0)
     return alert("Chưa có khoản chi nào được duyệt để chốt sổ!");
   const average = totalSpent / numPeople;
-
   const resultList = document.getElementById("settlementList");
   resultList.innerHTML = `<li style="color: blue;"><strong>💵 Trung bình mỗi người chịu:</strong> ${Math.round(average).toLocaleString("vi-VN")} VNĐ</li>`;
 
@@ -260,12 +332,10 @@ document.getElementById("btnSettle").addEventListener("click", () => {
       statusText = "Đã đóng đủ";
       color = "gray";
     }
-
     const li = document.createElement("li");
     li.innerHTML = `<strong>Tài khoản: ${member}</strong> (Đã chi: ${paidByMember[member].toLocaleString("vi-VN")}) <br> <span style="color: ${color}; font-weight: bold;">${statusText}</span>`;
     resultList.appendChild(li);
   }
-
   const liNote = document.createElement("li");
   liNote.innerHTML = `<em>*Các thành viên khác trong phòng chưa chi khoản nào cần đóng đủ: ${Math.round(average).toLocaleString("vi-VN")} VNĐ</em>`;
   resultList.appendChild(liNote);
