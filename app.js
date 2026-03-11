@@ -106,11 +106,32 @@ document.getElementById("btnLogout").addEventListener("click", () => {
 // --- 2. XỬ LÝ SẢNH CHỜ (TẠO PHÒNG & VÀO PHÒNG) ---
 
 // TẠO PHÒNG MỚI (Trở thành Admin)
+// TẠO PHÒNG MỚI (Trở thành Admin)
 document.getElementById("btnCreateRoom").addEventListener("click", async () => {
-  const newCode = generateRoomCode();
+  // Lấy mã phòng do user tự gõ
+  const newCode = document
+    .getElementById("createRoomCode")
+    .value.trim()
+    .toUpperCase();
+  if (!newCode) return alert("Vui lòng nhập tên mã phòng bạn muốn tạo!");
+
+  document.getElementById("btnCreateRoom").innerText = "Đang kiểm tra...";
   try {
-    // Tạo một bảng ghi trong collection 'rooms'
-    await setDoc(doc(db, "rooms", newCode), {
+    const roomRef = doc(db, "rooms", newCode);
+    const roomSnap = await getDoc(roomRef);
+
+    // Kiểm tra xem mã này đã có ai xài chưa
+    if (roomSnap.exists()) {
+      document.getElementById("btnCreateRoom").innerText = "Tạo Phòng Ngay";
+      return alert(
+        "Mã phòng này đã có người sử dụng! Vui lòng nghĩ một mã khác (VD: " +
+          newCode +
+          "99).",
+      );
+    }
+
+    // Nếu chưa ai xài thì tiến hành tạo
+    await setDoc(roomRef, {
       adminEmail: activeUserEmail,
       members: [activeUserEmail],
       createdAt: new Date(),
@@ -118,10 +139,11 @@ document.getElementById("btnCreateRoom").addEventListener("click", async () => {
     alert(
       `Tạo phòng thành công! Mã phòng của bạn là: ${newCode}\nHãy gửi mã này cho thành viên khác để tham gia.`,
     );
-    enterRoom(newCode, true); // True vì người tạo là Admin
+    enterRoom(newCode, true);
   } catch (e) {
     alert("Lỗi tạo phòng: " + e.message);
   }
+  document.getElementById("btnCreateRoom").innerText = "Tạo Phòng Ngay";
 });
 
 // THAM GIA PHÒNG (Thành viên)
