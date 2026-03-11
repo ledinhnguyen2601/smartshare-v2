@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartShare - Quản lý chi tiêu_V2</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div id="login-section" class="card">
+        <h2>Hệ thống Nội bộ</h2>
+        <p>Sử dụng tài khoản cá nhân để bảo mật</p>
+        <p>
+          (Đăng kí tài khoản mới bằng cách nhập email và mật khẩu rồi nhấn đăng
+          kí mới!)
+        </p>
+        <input
+          type="email"
+          id="email"
+          placeholder="Email (VD: abc@gmail.com)"
+        />
+        <input
+          type="password"
+          id="password"
+          placeholder="Mật khẩu (Ít nhất 6 ký tự)"
+        />
+
+        <button id="btnLogin" style="background-color: #007bff">
+          Đăng nhập
+        </button>
+        <button
+          id="btnRegister"
+          style="background-color: #17a2b8; margin-top: 10px"
+        >
+          Đăng ký tài khoản mới
+        </button>
+
+        <p
+          id="login-error"
+          style="color: red; display: none; margin-top: 10px"
+        ></p>
+      </div>
+
+      <div id="app-section" class="card" style="display: none">
+        <h2>Sổ Đi Chợ - SmartShare</h2>
+        <div class="header-info">
+          <span class="offline-badge" id="network-status">Đang kết nối...</span>
+          <button id="btnLogout" class="btn-logout">Đăng xuất</button>
+        </div>
+
+        <p style="text-align: center; color: #555">
+          Xin chào, <b id="currentUserDisplay"></b>!
+        </p>
+
+        <div class="input-area">
+          <input
+            type="text"
+            id="itemName"
+            placeholder="Tên món đồ (VD: Rau, Thịt...)"
+          />
+          <input type="number" id="itemPrice" placeholder="Số tiền (VNĐ)" />
+          <button id="btnAddExpense" class="btn-add">Thêm khoản chi</button>
+        </div>
+
+        <div class="list-area">
+          <h3>Danh sách đã mua tháng này</h3>
+          <ul id="expenseList"></ul>
+          <div class="total-area">
+            <strong>Tổng cộng: <span id="totalAmount">0</span> VNĐ</strong>
+            <button id="btnSettle" class="btn-settle">Chốt sổ tháng này</button>
+          </div>
+
+          <div
+            id="settlementResult"
+            class="settlement-box"
+            style="display: none"
+          >
+            <h3>📊 Kết quả chia tiền</h3>
+            <ul id="settlementList"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="app.js?version=2"></script>
+  </body>
+</html>
