@@ -2,26 +2,36 @@
   box-sizing: border-box;
   font-family: Arial, sans-serif;
 }
+
 body {
   background-color: #f4f7f6;
+  margin: 0;
+  padding: 0;
   display: flex;
-  justify-content: center;
-  padding: 20px;
+  flex-direction: column;
+  min-height: 100vh; /* Cái này giúp đẩy Footer luôn xuống đáy màn hình */
 }
+
 .container {
   width: 100%;
   max-width: 500px;
+  margin: 40px auto; /* Căn giữa form trên màn hình */
+  padding: 0 20px;
+  flex: 1; /* Phần thân chiếm hết chỗ trống để đẩy footer xuống */
 }
+
 .card {
   background: white;
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
 h2 {
   text-align: center;
   color: #333;
 }
+
 input,
 select,
 button {
@@ -32,6 +42,7 @@ button {
   border: 1px solid #ccc;
   font-size: 16px;
 }
+
 button {
   background-color: #28a745;
   color: white;
@@ -39,14 +50,17 @@ button {
   cursor: pointer;
   font-weight: bold;
 }
+
 button:hover {
   background-color: #218838;
 }
+
 .btn-logout {
   background-color: #dc3545;
   padding: 8px;
   width: auto;
 }
+
 .offline-badge {
   background-color: #ffc107;
   padding: 5px 10px;
@@ -54,16 +68,19 @@ button:hover {
   font-size: 12px;
   font-weight: bold;
 }
+
 .header-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
+
 ul {
   list-style-type: none;
   padding: 0;
 }
+
 li {
   background: #f9f9f9;
   padding: 10px;
@@ -71,6 +88,7 @@ li {
   display: flex;
   justify-content: space-between;
 }
+
 .delete-btn {
   background: #ff4d4d;
   color: white;
@@ -79,18 +97,22 @@ li {
   cursor: pointer;
   width: auto;
 }
+
 .total-area {
   margin-top: 20px;
   font-size: 18px;
   text-align: right;
 }
+
 .btn-settle {
   background-color: #007bff;
   margin-top: 15px;
 }
+
 .btn-settle:hover {
   background-color: #0056b3;
 }
+
 .settlement-box {
   margin-top: 20px;
   padding: 15px;
@@ -99,15 +121,194 @@ li {
   border-left: 5px solid #007bff;
   text-align: left;
 }
+
 .settlement-box h3 {
   margin-top: 0;
   color: #333;
   font-size: 18px;
   text-align: center;
 }
+
 .settlement-box li {
   background: transparent;
   border-bottom: 1px dashed #ccc;
   display: block;
   line-height: 1.6;
+}
+
+/* =========================================
+   CSS CHÂN TRANG (TÔNG TRẮNG SÁNG SỦA)
+========================================= */
+.site-footer {
+  background-color: #ffffff;
+  color: #333333;
+  padding: 40px 0 0;
+  font-family: Arial, sans-serif;
+  margin-top: 50px;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.02);
+  width: 100%;
+}
+
+.footer-container {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 20px 40px;
+}
+
+.footer-col {
+  width: 30%;
+  min-width: 250px;
+  margin-bottom: 20px;
+}
+
+.footer-col h4 {
+  font-size: 18px;
+  color: #007bff;
+  margin-bottom: 20px;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.footer-col h4::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 40px;
+  height: 3px;
+  background-color: #17a2b8;
+  border-radius: 2px;
+}
+
+.footer-col p {
+  font-size: 14px;
+  line-height: 1.8;
+  margin-bottom: 15px;
+  color: #555555;
+}
+
+.footer-col .quote {
+  font-style: italic;
+  color: #888888;
+}
+
+.footer-col i {
+  margin-right: 10px;
+  color: #007bff;
+  width: 20px;
+  text-align: center;
+}
+
+.social-links a {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  background-color: #f3f4f6;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 36px;
+  color: #4b5563;
+  margin-right: 10px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.social-links a:hover {
+  background-color: #007bff;
+  color: #ffffff;
+  transform: translateY(-3px);
+}
+
+.footer-bottom {
+  background-color: #f8f9fa;
+  text-align: center;
+  padding: 15px 0;
+  font-size: 13px;
+  color: #6c757d;
+  border-top: 1px solid #e9ecef;
+}
+
+/* =========================================
+   CSS WIDGET LIÊN HỆ NỔI
+========================================= */
+.floating-contact {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 9999;
+  background: white;
+  padding: 15px 10px;
+  border-radius: 40px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  align-items: center;
+}
+
+.scroll-top {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  color: #ef4444;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  border: 2px solid #ef4444;
+  margin-bottom: 10px;
+  font-size: 18px;
+  transition: 0.3s;
+}
+
+.scroll-top:hover {
+  background-color: #ef4444;
+  color: white;
+}
+
+.contact-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: bold;
+  gap: 5px;
+  transition: transform 0.2s;
+}
+
+.contact-btn:hover {
+  transform: scale(1.1);
+}
+
+.contact-btn i {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 20px;
+}
+
+.contact-btn img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.contact-btn.phone i {
+  background-color: #22c55e;
+}
+
+.contact-btn.messenger i {
+  background: linear-gradient(45deg, #00c6ff, #0072ff);
 }
