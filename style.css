@@ -152,7 +152,7 @@ li {
 
 .footer-container {
   display: flex;
-  justify-content: space-around;
+  justify-content: center; /* Đẩy cột duy nhất ra giữa */
   flex-wrap: wrap;
   max-width: 1200px;
   margin: auto;
@@ -160,9 +160,10 @@ li {
 }
 
 .footer-col {
-  width: 30%;
-  min-width: 250px;
+  width: 100%;
+  max-width: 600px; /* Giới hạn độ rộng để chữ không bị bè ra hai bên */
   margin-bottom: 20px;
+  text-align: center; /* Căn giữa toàn bộ chữ */
 }
 
 .footer-col h4 {
@@ -171,14 +172,16 @@ li {
   margin-bottom: 20px;
   position: relative;
   padding-bottom: 10px;
+  display: inline-block; /* Gom độ rộng vừa bằng chữ để căn giữa gạch chân */
 }
 
 .footer-col h4::after {
   content: "";
   position: absolute;
-  left: 0;
+  left: 0; /* Đưa vạch bắt đầu từ mép trái của chữ */
+  transform: none; /* Bỏ lệnh ép ra giữa */
   bottom: 0;
-  width: 40px;
+  width: 100%; /* 🌟 Kéo dài độ rộng bằng 100% chữ */
   height: 3px;
   background-color: #17a2b8;
   border-radius: 2px;
@@ -197,10 +200,8 @@ li {
 }
 
 .footer-col i {
-  margin-right: 10px;
+  margin-right: 8px;
   color: #007bff;
-  width: 20px;
-  text-align: center;
 }
 
 .social-links a {
